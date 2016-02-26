@@ -1,7 +1,8 @@
 {
     "name": "erwang/korm",
     "description": "ORM for PHP",
-    "licence":"GNU-GPL3",
+    "license":"GNU-GPL3",
+    "keywords":["orm","mapping"],
     "authors": [
         {
             "name": "erwang",
