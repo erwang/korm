@@ -3,7 +3,7 @@
     "description": "ORM for PHP",
     "license":"GNU-GPL3",
     "keywords":["orm","mapping"],
-    "minimum-stability": "v0.1",
+    "minimum-stability": "dev",
     "authors": [
         {
             "name": "erwang",
