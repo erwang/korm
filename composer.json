@@ -3,6 +3,9 @@
     "description": "ORM for PHP",
     "license":"GNU-GPL3",
     "keywords":["orm","mapping"],
+    "psr-4": {
+        "KORM\\": "src/"
+    },
     "authors": [
         {
             "name": "erwang",
