@@ -5,7 +5,7 @@
     "keywords":["orm","mapping"],
     "autoload": {
         "psr-4": {
-            "KORN\\": "src/"
+            "KORM\\": "src/"
         }
     },    
     "authors": [
