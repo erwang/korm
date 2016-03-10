@@ -32,7 +32,7 @@ class Object {
         if (isset($class::$_table)) {
             return $class::$_table;
         } else {
-            return strtolower(end(explode('\\', $class)));
+            return strtolower(str_replace('\\','_',$class));
         }
     }
 
