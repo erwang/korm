@@ -1,7 +1,9 @@
 <?php
+
 /**
  * Object
  */
+
 namespace KORM;
 
 use KORM\Connexion;
@@ -16,13 +18,13 @@ class Object {
      * @var boolean
      */
     public static $updateTableStructure = true;
+
     /**
      * name of the primary key column
      * @var string
      */
     protected static $_primaryKeyColumn = 'id';
 
-    
     /**
      * return table name
      * @return string table name
@@ -32,7 +34,7 @@ class Object {
         if (isset($class::$_table)) {
             return $class::$_table;
         } else {
-            return strtolower(str_replace('\\','_',$class));
+            return strtolower(str_replace('\\', '_', $class));
         }
     }
 
@@ -83,6 +85,7 @@ class Object {
         $query = 'select * from `' . self::_getTable() . '` where ' . $where;
         return self::query($query, $params);
     }
+
     /**
      * find one object with a select query
      * <code>
@@ -162,10 +165,10 @@ class Object {
         } elseif (class_exists($this->_getClassBetween($class, true))) {
             $classBetween = $this->_getClassBetween($class, true);
             $items = $classBetween::find([self::_getTable() . '_id' => $this->id]);
-            $array=[];
+            $array = [];
             foreach ($items as $item) {
-                $field=$class::_getTable().'_id';
-                $array[]=$class::get($item->$field);
+                $field = $class::_getTable() . '_id';
+                $array[] = $class::get($item->$field);
             }
             return $array;
         } else {
@@ -248,7 +251,8 @@ class Object {
         if ($class::tableExists()) {
             $vars = $class::getColumns($class::_getTable());
             foreach ($vars as $value) {
-                $object->$value['Field'] = $value['Default'];
+                $key = $value['Field'];
+                $object->$key = $value['Default'];
             }
         }
         return $object;
@@ -314,7 +318,7 @@ class Object {
         $vars = get_object_vars($this);
         foreach ($vars as $key => $value) {
             if (is_array($value)) {
-                $classBetween = $this->_getClassBetween(ucfirst(substr($key, 0, -1)), true);
+                $classBetween = $this->_getClassBetween(ucfirst($key), true);
                 $items = $classBetween::find([$this->_getTable() . '_id' => $this->id]);
                 foreach ($items as $item) {
                     $item->delete();
@@ -324,7 +328,7 @@ class Object {
                     $field1 = $this->_getTable();
                     $item->$field1 = $this;
 
-                    $field2 = substr($key, 0, -1);
+                    $field2 = $key;
                     $item->$field2 = $v;
                     $item->store();
                 }
@@ -353,7 +357,6 @@ class Object {
             $class = ucfirst($name);
             return $class::get($this->$field);
         }
-        $name = substr($name, 0, -1);
         return $this->hasMany($this->_getNamespace() . '\\' . ucfirst($name));
     }
 
@@ -396,6 +399,12 @@ class Object {
                     $type = 'time';
                 } elseif (\DateTime::createFromFormat('Y-m-d H:i:s', $value) or \DateTime::createFromFormat('Y-m-d H:i', $value)) {
                     $type = 'datetime';
+                } elseif (is_numeric($value)) {
+                    if(intval($value)==$value){
+                        return self::_getColumnType(intval($value));
+                    }else{
+                        return self::_getColumnType(floatval($value));
+                    }
                 } elseif (strlen($value) > 250) {
                     $type = 'longtext';
                 } else {
@@ -410,50 +419,52 @@ class Object {
         $vars = get_object_vars($this);
 
         foreach ($vars as $key => $value) {
-            $trouve = false;
-            $name = $key;
-            $type = self::_getColumnType($value);
-            $index = '';
-            $null = '';
-            $foreignKey = false;
-            if (is_object($value)) {
-                $name.='_id';
-                $referenceClass = get_class($value);
-                $value = $value->id;
-                $type = 'int(11)';
-                $null = 'NULL';
-                $index = ',ADD INDEX(`' . $name . '`)';
-                $foreignKey = true;
-                $referenceTable = $referenceClass::_getTable();
-            }
-            if (is_array($value)) {
-                $trouve = true;
-                $value = 'NULL';
-            }
-            foreach ($columns as $column) {
-                if ($column['Field'] == $name) {
+            if (substr($key, 0, 1) != '_') {
+                $trouve = false;
+                $name = $key;
+                $type = self::_getColumnType($value);
+                $index = '';
+                $null = '';
+                $foreignKey = false;
+                if (is_object($value)) {
+                    $name.='_id';
+                    $referenceClass = get_class($value);
+                    $value = $value->id;
+                    $type = 'int(11)';
+                    $null = 'NULL';
+                    $index = ',ADD INDEX(`' . $name . '`)';
+                    $foreignKey = true;
+                    $referenceTable = $referenceClass::_getTable();
+                }
+                if (is_array($value)) {
                     $trouve = true;
-                    $c = $column;
+                    $value = 'NULL';
                 }
-            }
-            //create field
-            if (!$trouve) {
-                //ALTER TABLE `board` ADD `label` VARCHAR(200) NOT NULL AFTER `id`; 
-                self::exec('ALTER TABLE `' . self::_getTable() . '` ADD `' . $name . '` ' . $type . ' ' . ' ' . $null . ' ' . $index, []);
-                if ($foreignKey) {
-                    self::exec('ALTER TABLE `' . self::_getTable() . '` ADD FOREIGN KEY (`' . $name . '`) 
-                    REFERENCES `' . $referenceTable . '`(`id`) ON DELETE RESTRICT ON UPDATE RESTRICT;', []);
-                }
-            } elseif (isset($c)) {
-                if ($type != $c['Type'] and $value !== 'NULL' and ! is_null($value)) {
-                    $dataTypes = ['tinyint(1)', 'int(11)', 'float', 'date', 'time', 'datetime', 'varchar(250)', 'longtext'];
-                    //update field
-                    if (array_search($c['Type'], $dataTypes) < array_search($type, $dataTypes)) {
-                        self::exec('ALTER TABLE `' . self::_getTable() . '` CHANGE `' . $name . '` `' . $name . '` ' . $type, []);
+                foreach ($columns as $column) {
+                    if ($column['Field'] == $name) {
+                        $trouve = true;
+                        $c = $column;
                     }
                 }
+                //create field
+                if (!$trouve) {
+                    //ALTER TABLE `board` ADD `label` VARCHAR(200) NOT NULL AFTER `id`; 
+                    self::exec('ALTER TABLE `' . self::_getTable() . '` ADD `' . $name . '` ' . $type . ' ' . ' ' . $null . ' ' . $index, []);
+                    if ($foreignKey) {
+                        self::exec('ALTER TABLE `' . self::_getTable() . '` ADD FOREIGN KEY (`' . $name . '`) 
+                    REFERENCES `' . $referenceTable . '`(`id`) ON DELETE RESTRICT ON UPDATE RESTRICT;', []);
+                    }
+                } elseif (isset($c)) {
+                    if ($type != $c['Type'] and $value !== 'NULL' and ! is_null($value)) {
+                        $dataTypes = ['tinyint(1)', 'int(11)', 'float', 'date', 'time', 'datetime', 'varchar(250)', 'longtext'];
+                        //update field
+                        if (array_search($c['Type'], $dataTypes) < array_search($type, $dataTypes)) {
+                            self::exec('ALTER TABLE `' . self::_getTable() . '` CHANGE `' . $name . '` `' . $name . '` ' . $type, []);
+                        }
+                    }
+                }
+                unset($c);
             }
-            unset($c);
         }
     }
 
