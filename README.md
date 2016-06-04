@@ -50,6 +50,12 @@ $book->title='Les Misérables';
 $book->store();
 ```
 
+##Delete an object
+``` php
+$book = Book::get($id);
+$book->delete();
+```
+
 ##Relations
 
 
