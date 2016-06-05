@@ -13,5 +13,9 @@
             "name": "erwang",
             "email": "erwang@users.noreply.github.com"
         }
-    ]
+    ],
+
+    "require-dev": {
+        "phpdocumentor/phpdocumentor": "2.*"
+    }
 }

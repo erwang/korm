@@ -57,5 +57,8 @@ $book->delete();
 ```
 
 ##Relations
-
+``` php
+$book = Book::get($id);
+$author = $book->author; //return the object Author from table author
+```
 
