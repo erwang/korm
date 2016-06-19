@@ -6,7 +6,7 @@
 
 namespace KORM;
 
-use KORM\Connexion;
+use KORM\Connection;
 
 /**
  * class to convert table row to object
@@ -29,19 +29,29 @@ class Object {
      * create an object
      * @param type $class
      */
-    public function __construct($class=null){
-        if(is_null($class)){
-            $class=  get_called_class();
-        }
+    public function __construct($id = null) {
+        $class = get_called_class();
         if ($class::tableExists()) {
-            $vars = $class::getColumns($class::_getTable());
-            foreach ($vars as $value) {
-                $key = $value['Field'];
-                $this->$key = $value['Default'];
+            if (is_null($id) and (!isset($this->id) or is_null($this->id))) {
+                $vars = $class::getColumns($class::_getTable());
+                foreach ($vars as $value) {
+                    $key = $value['Field'];
+                    $this->$key = $value['Default'];
+                }
+            } else {
+                $query = 'select * from `' . $class::_getTable() . '` where ' . self::$_primaryKeyColumn . '=?';
+                $pdo = Connection::prepare($query);
+                $pdo->execute([$id]);
+                $attrs = $pdo->fetchAll(\PDO::FETCH_ASSOC);
+                if (isset($attrs[0])) {
+                    foreach ($attrs[0] as $key => $value) {
+                        $this->$key = $value;
+                    }
+                }
             }
-        }        
+        }
     }
-    
+
     /**
      * return table name
      * @return string table name
@@ -65,7 +75,16 @@ class Object {
             $table = self::_getTable();
         }
         $query = 'show columns from `' . $table . '`';
-        return Connexion::query($query)->fetchAll(\PDO::FETCH_ASSOC);
+        if (self::tableExists()) {
+            try {
+                return Connection::query($query)->fetchAll(\PDO::FETCH_ASSOC);
+            } catch (Exception $e) {
+                print($query);
+                exit($e->getMessage());
+            }
+        } else {
+            return [];
+        }
     }
 
     /**
@@ -78,15 +97,19 @@ class Object {
         if (is_null($table)) {
             $table = self::_getTable();
         }
-        $query = 'show columns from `' . $table . '` where Field=?';
-        $statement = Connexion::prepare($query);
-        try {
-            $statement->execute([$column]);
-        } catch (Exception $e) {
-            print($query);
-            exit($e->getMessage());
+        if (self::tableExists()) {
+            $query = 'show columns from `' . $table . '` where Field=?';
+            $statement = Connection::prepare($query);
+            try {
+                $statement->execute([$column]);
+            } catch (Exception $e) {
+                print($query);
+                exit($e->getMessage());
+            }
+            return count($statement->fetchAll()) > 0;
+        } else {
+            return false;
         }
-        return count($statement->fetchAll()) > 0;
     }
 
     /**
@@ -166,14 +189,16 @@ class Object {
      * @return array<Object>
      */
     public static function query($query, $params) {
-        $statement = Connexion::prepare($query);
+        $statement = Connection::prepare($query);
         try {
             $statement->execute($params);
         } catch (Exception $e) {
             print($query);
             exit($e->getMessage());
         }
-        return $statement->fetchAll(\PDO::FETCH_CLASS, get_called_class());
+        
+        $result=$statement->fetchAll(\PDO::FETCH_CLASS, get_called_class());
+        return $result;
     }
 
     /**
@@ -203,12 +228,17 @@ class Object {
             return implode('_', $array);
         }
     }
+
     /**
      * return object with relation
      * @param string $class
      * @return array
      */
     public function hasMany($class) {
+        if(!class_exists($class)){
+            var_dump($this);
+            exit('Class does not exists : '.$class);
+        }
         if ($class::hasColumn(self::_getTable() . '_id')) {
             return $class::find([self::_getTable() . '_id' => $this->id]);
             //}elseif($class::hasColumn(self::_getTable() . '_id')){
@@ -225,7 +255,7 @@ class Object {
             return false;
         }
     }
-    
+
     /**
      * execute a query
      * @param string $query
@@ -234,7 +264,7 @@ class Object {
      */
     public static function exec($query, $params) {
         try {
-            $statement = Connexion::prepare($query);
+            $statement = Connection::prepare($query);
             $statement->execute($params);
         } catch (Exception $e) {
             var_dump($query);
@@ -245,26 +275,17 @@ class Object {
     }
 
     /**
-     * return the object with id
-     * @param int $id 
-     * @return Object
-     */
-    public static function get($id) {
-        return self::whereFirst('`' . self::$_primaryKeyColumn . '`=?', [$id]);
-    }
-
-    /**
      * drop table
      * @param boolean $foreignKeyCheck
      * @return PDOStatement
      */
     public static function drop($foreignKeyCheck = true) {
         if (!$foreignKeyCheck) {
-            Connexion::exec('SET FOREIGN_KEY_CHECKS = 0;');
+            Connection::exec('SET FOREIGN_KEY_CHECKS = 0;');
         }
-        $return = Connexion::exec('drop table `' . self::_getTable() . '`;');
+        $return = Connection::exec('drop table `' . self::_getTable() . '`;');
         if (!$foreignKeyCheck) {
-            Connexion::exec('SET FOREIGN_KEY_CHECKS = 1;');
+            Connection::exec('SET FOREIGN_KEY_CHECKS = 1;');
         }
         return $return;
     }
@@ -276,14 +297,15 @@ class Object {
      */
     public static function truncate($foreignKeyCheck = true) {
         if (!$foreignKeyCheck) {
-            Connexion::exec('SET FOREIGN_KEY_CHECKS = 0;');
+            Connection::exec('SET FOREIGN_KEY_CHECKS = 0;');
         }
-        $return = Connexion::exec('truncate `' . self::_getTable() . '`;');
+        $return = Connection::exec('truncate `' . self::_getTable() . '`;');
         if (!$foreignKeyCheck) {
-            Connexion::exec('SET FOREIGN_KEY_CHECKS = 1;');
+            Connection::exec('SET FOREIGN_KEY_CHECKS = 1;');
         }
         return $return;
     }
+
     /**
      * delete Object
      * @return integer
@@ -307,7 +329,7 @@ class Object {
      * @return boolean
      */
     public static function keyExists($id) {
-        return sizeof(self::get($id)) > 0;
+        return sizeof(self::find([self::$_primaryKeyColumn,$id])) > 0;
     }
 
     /**
@@ -316,7 +338,7 @@ class Object {
      */
     public static function tableExists() {
         $query = 'show tables like "' . self::_getTable() . '"';
-        return sizeof(self::query($query, [])) > 0;
+        return sizeof(Connection::fetchAll($query)) > 0;
     }
 
     /**
@@ -359,18 +381,17 @@ class Object {
          */
         if (!isset($this->$id) or is_null($this->$id)) {
             $query = 'insert into `' . self::_getTable() . '`(`' . implode('`,`', array_keys($vars)) . '`) values (?' . str_repeat(',?', sizeof($vars) - 1) . ')';
-            $statement = Connexion::prepare($query);
+            $statement = Connection::prepare($query);
             $statement->execute(array_values($vars));
-            $this->$id = Connexion::lastInsertId();
+            $this->$id = Connection::lastInsertId();
         } else {
             $query = 'update `' . self::_getTable() . '` set ' . implode('=?,', array_keys($vars)) . '=? '
                     . 'where ' . self::$_primaryKeyColumn . '=?';
 
-            $statement = Connexion::prepare($query);
+            $statement = Connection::prepare($query);
             $vars[self::$_primaryKeyColumn] = $this->$id;
             $statement->execute(array_values($vars));
         }
-
         $vars = get_object_vars($this);
         foreach ($vars as $key => $value) {
             if (is_array($value)) {
@@ -425,7 +446,7 @@ class Object {
         $field = $name . '_id';
         if (isset($this->$field)) {
             $class = ucfirst($name);
-            return $class::get($this->$field);
+            return new $class($this->$field);
         }
         return $this->hasMany($this->_getNamespace() . '\\' . ucfirst($name));
     }
@@ -434,8 +455,9 @@ class Object {
      * Update table structure
      */
     private static function _createTable() {
-        self::exec('create table ' . self::_getTable() . '(id  INT  NOT NULL  AUTO_INCREMENT PRIMARY KEY)', []);
+        self::exec('create table ' . self::_getTable() . '(' . self::$_primaryKeyColumn . '  INT  NOT NULL  AUTO_INCREMENT PRIMARY KEY)', []);
     }
+
     /**
      * return column type
      * @param string $value
@@ -475,6 +497,7 @@ class Object {
         }
         return $type;
     }
+
     /**
      * create columns from attributes value
      */
@@ -516,7 +539,7 @@ class Object {
                     self::exec('ALTER TABLE `' . self::_getTable() . '` ADD `' . $name . '` ' . $type . ' ' . ' ' . $null . ' ' . $index, []);
                     if ($foreignKey) {
                         self::exec('ALTER TABLE `' . self::_getTable() . '` ADD FOREIGN KEY (`' . $name . '`) 
-                    REFERENCES `' . $referenceTable . '`(`id`) ON DELETE RESTRICT ON UPDATE RESTRICT;', []);
+                    REFERENCES `' . $referenceTable . '`(`' . $referenceClass::_primaryKeyColumn . '`) ON DELETE RESTRICT ON UPDATE RESTRICT;', []);
                     }
                 } elseif (isset($c)) {
                     if ($type != $c['Type'] and $value !== 'NULL' and ! is_null($value)) {

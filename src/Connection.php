@@ -8,7 +8,7 @@ namespace KORM;
 /**
  * Connexion to the database
  */
-class Connexion {
+class Connection {
     /**
      * store the PDO object
      * @var PDO
