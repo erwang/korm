@@ -32,7 +32,7 @@ class Object {
     public function __construct($id = null) {
         $class = get_called_class();
         if ($class::tableExists()) {
-            if (is_null($id) and (!isset($this->id) or is_null($this->id))) {
+            if (is_null($id) and ( !isset($this->id) or is_null($this->id))) {
                 $vars = $class::getColumns($class::_getTable());
                 foreach ($vars as $value) {
                     $key = $value['Field'];
@@ -182,8 +182,30 @@ class Object {
         return self::query($query, []);
     }
 
+    public static function count($params = []) {
+        $query = 'select count(*) from `' . self::_getTable() . '` ';
+        $where = [];
+        $p = [];
+        if (count($params) > 0) {
+            foreach ($params as $key => $value) {
+                $where[] = '`' . $key . '`=?';
+                $p[] = $value;
+            }
+            $query.='where '.implode(' and ', $where);            
+        }
+        $statement = Connection::prepare($query);
+        try {
+            $statement->execute($p);
+        } catch (Exception $e) {
+            print($query);
+            exit($e->getMessage());
+        }
+        $result = $statement->fetchAll(\PDO::FETCH_COLUMN);
+        return $result[0];
+    }
+
     /**
-     * get objetcs from a query
+     * get objects from a query
      * @param string $query
      * @param array $params
      * @return array<Object>
@@ -196,8 +218,8 @@ class Object {
             print($query);
             exit($e->getMessage());
         }
-        
-        $result=$statement->fetchAll(\PDO::FETCH_CLASS, get_called_class());
+
+        $result = $statement->fetchAll(\PDO::FETCH_CLASS, get_called_class());
         return $result;
     }
 
@@ -235,9 +257,9 @@ class Object {
      * @return array
      */
     public function hasMany($class) {
-        if(!class_exists($class)){
+        if (!class_exists($class)) {
             var_dump($this);
-            exit('Class does not exists : '.$class);
+            exit('Class does not exists : ' . $class);
         }
         if ($class::hasColumn(self::_getTable() . '_id')) {
             return $class::find([self::_getTable() . '_id' => $this->id]);
@@ -281,11 +303,14 @@ class Object {
      */
     public static function drop($foreignKeyCheck = true) {
         if (!$foreignKeyCheck) {
-            Connection::exec('SET FOREIGN_KEY_CHECKS = 0;');
+            Connection::exec('SET FOREIGN_KEY_CHECKS = 0;
+');
         }
-        $return = Connection::exec('drop table `' . self::_getTable() . '`;');
+        $return = Connection::exec('drop table `' . self::_getTable() . '`;
+');
         if (!$foreignKeyCheck) {
-            Connection::exec('SET FOREIGN_KEY_CHECKS = 1;');
+            Connection::exec('SET FOREIGN_KEY_CHECKS = 1;
+');
         }
         return $return;
     }
@@ -297,11 +322,14 @@ class Object {
      */
     public static function truncate($foreignKeyCheck = true) {
         if (!$foreignKeyCheck) {
-            Connection::exec('SET FOREIGN_KEY_CHECKS = 0;');
+            Connection::exec('SET FOREIGN_KEY_CHECKS = 0;
+');
         }
-        $return = Connection::exec('truncate `' . self::_getTable() . '`;');
+        $return = Connection::exec('truncate `' . self::_getTable() . '`;
+');
         if (!$foreignKeyCheck) {
-            Connection::exec('SET FOREIGN_KEY_CHECKS = 1;');
+            Connection::exec('SET FOREIGN_KEY_CHECKS = 1;
+');
         }
         return $return;
     }
@@ -311,7 +339,7 @@ class Object {
      * @return integer
      */
     public function delete() {
-        $return = $this->exec('delete from ' . self::_getTable() . ' where `' . self::$_primaryKeyColumn . '`=?', [$this->id]);
+        $return = $this->exec('delete from ' . self::_getTable() . ' where `' . self::$_primaryKeyColumn . '` = ?', [$this->id]);
         unset($this);
         return $return;
     }
@@ -329,7 +357,7 @@ class Object {
      * @return boolean
      */
     public static function keyExists($id) {
-        return sizeof(self::find([self::$_primaryKeyColumn,$id])) > 0;
+        return sizeof(self::find([self::$_primaryKeyColumn, $id])) > 0;
     }
 
     /**
@@ -380,13 +408,13 @@ class Object {
          * create and execute query
          */
         if (!isset($this->$id) or is_null($this->$id)) {
-            $query = 'insert into `' . self::_getTable() . '`(`' . implode('`,`', array_keys($vars)) . '`) values (?' . str_repeat(',?', sizeof($vars) - 1) . ')';
+            $query = 'insert into `' . self::_getTable() . '`(`' . implode('`, `', array_keys($vars)) . '`) values (?' . str_repeat(', ?', sizeof($vars) - 1) . ')';
             $statement = Connection::prepare($query);
             $statement->execute(array_values($vars));
             $this->$id = Connection::lastInsertId();
         } else {
-            $query = 'update `' . self::_getTable() . '` set ' . implode('=?,', array_keys($vars)) . '=? '
-                    . 'where ' . self::$_primaryKeyColumn . '=?';
+            $query = 'update `' . self::_getTable() . '` set ' . implode(' = ?, ', array_keys($vars)) . ' = ? '
+                    . 'where ' . self::$_primaryKeyColumn . ' = ?';
 
             $statement = Connection::prepare($query);
             $vars[self::$_primaryKeyColumn] = $this->$id;
@@ -455,7 +483,7 @@ class Object {
      * Update table structure
      */
     private static function _createTable() {
-        self::exec('create table ' . self::_getTable() . '(' . self::$_primaryKeyColumn . '  INT  NOT NULL  AUTO_INCREMENT PRIMARY KEY)', []);
+        self::exec('create table ' . self::_getTable() . '(' . self::$_primaryKeyColumn . ' INT NOT NULL AUTO_INCREMENT PRIMARY KEY)', []);
     }
 
     /**
@@ -519,7 +547,7 @@ class Object {
                     $value = $value->id;
                     $type = 'int(11)';
                     $null = 'NULL';
-                    $index = ',ADD INDEX(`' . $name . '`)';
+                    $index = ', ADD INDEX(`' . $name . '`)';
                     $foreignKey = true;
                     $referenceTable = $referenceClass::_getTable();
                 }
@@ -538,8 +566,9 @@ class Object {
                     //ALTER TABLE `board` ADD `label` VARCHAR(200) NOT NULL AFTER `id`; 
                     self::exec('ALTER TABLE `' . self::_getTable() . '` ADD `' . $name . '` ' . $type . ' ' . ' ' . $null . ' ' . $index, []);
                     if ($foreignKey) {
-                        self::exec('ALTER TABLE `' . self::_getTable() . '` ADD FOREIGN KEY (`' . $name . '`) 
-                    REFERENCES `' . $referenceTable . '`(`' . $referenceClass::_primaryKeyColumn . '`) ON DELETE RESTRICT ON UPDATE RESTRICT;', []);
+                        self::exec('ALTER TABLE `' . self::_getTable() . '` ADD FOREIGN KEY (`' . $name . '`)
+REFERENCES `' . $referenceTable . '`(`' . $referenceClass::_primaryKeyColumn . '`) ON DELETE RESTRICT ON UPDATE RESTRICT;
+', []);
                     }
                 } elseif (isset($c)) {
                     if ($type != $c['Type'] and $value !== 'NULL' and ! is_null($value)) {
