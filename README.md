@@ -4,18 +4,18 @@ ORM in PHP
 
 ## Setup
 
-The Connexion class setup must be call first.
+The Connection class setup must be call first.
 ``` php
-\KORM\Connexion::setup('pdo_dsn', 'username', 'password');
+\KORM\Connection::setup('pdo_dsn', 'username', 'password');
 ```
 
-A connexion to a mysql database :
+A connection to a mysql database :
 ``` php
-\KORM\Connexion::setup('mysql:host=localhost;dbname=database', 'username', 'password');
+\KORM\Connection::setup('mysql:host=localhost;dbname=database', 'username', 'password');
 ```
 with options :
 ``` php
-\KORM\Connexion::setup('mysql:host=localhost;dbname=database', 'username', 'password', array(\PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES \'UTF8\''));
+\KORM\Connection::setup('mysql:host=localhost;dbname=database', 'username', 'password', array(\PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES \'UTF8\''));
 ```
 
 ##Create a class
@@ -34,31 +34,47 @@ The `Book` objects will be store in `book` table
 
 ##Get a row
 ``` php
-$book = Book::get($id);
+$book = new Book($id);
 ```
 _will load in `$book` all the data in table `book` with id=1
 
 ##Create a row
 ``` php
-$book = Book::newItem();
+$book = new Book();
 ```
 
 ##Store an object
 ``` php
-$book = Book::get($id);
+$book = new Book($id);
 $book->title='Les Misérables';
 $book->store();
 ```
 
 ##Delete an object
 ``` php
-$book = Book::get($id);
+$book = new Book($id);
 $book->delete();
 ```
 
 ##Relations
 ``` php
-$book = Book::get($id);
+//create a book
+$lesMiserables = new Book();
+$lesMiserables->title='Les Misérables';
+$lesMiserables->store();
+
+//create an author
+$hugo=new Author();
+$hugo->name='Victor Hugo';
+$hugo->store();
+
+//create a relation
+$lesMiserables->author=$hugo;
+$lesMiserables->store();
+
+//get the book
+$book = new Book($lesMiserables->id);
 $author = $book->author; //return the object Author from table author
 ```
+
 
