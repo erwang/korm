@@ -76,5 +76,11 @@ $lesMiserables->store();
 $book = new Book($lesMiserables->id);
 $author = $book->author; //return the object Author from table author
 ```
+##Count
+//get the number of books
+Book::count();
+
+//get the number of books from an author
+Book::count(['author_id'=>$author->id]);
 
 
