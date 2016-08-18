@@ -57,6 +57,8 @@ $book->delete();
 ```
 
 ##Relations
+
+###One to many
 ``` php
 //create a book
 $lesMiserables = new Book();
@@ -75,6 +77,18 @@ $lesMiserables->store();
 //get the book
 $book = new Book($lesMiserables->id);
 $author = $book->author; //return the object Author from table author
+```
+### many to many
+``` php
+//create tags
+$tag1=new Tag();
+$tag1->text='french';
+$tag1->store();
+
+$tag2=new Tag();
+$tag2->text='Roman';
+$tag2->store();
+$lesMiserables->tag=\[$tag1,$tag2\];
 ```
 ##Count
 //get the number of books
