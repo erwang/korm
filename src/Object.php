@@ -413,8 +413,8 @@ class Object {
             $statement->execute(array_values($vars));
             $this->$id = Connection::lastInsertId();
         } else {
-            $query = 'update `' . self::_getTable() . '` set ' . implode(' = ?, ', array_keys($vars)) . ' = ? '
-                    . 'where ' . self::$_primaryKeyColumn . ' = ?';
+            $query = 'update `' . self::_getTable() . '` set `' . implode('` = ?, `', array_keys($vars)) . '` = ? '
+                    . 'where `' . self::$_primaryKeyColumn . '` = ?';
 
             $statement = Connection::prepare($query);
             $vars[self::$_primaryKeyColumn] = $this->$id;
