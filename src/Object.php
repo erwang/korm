@@ -119,11 +119,12 @@ class Object {
      * </code>
      * @param string $where
      * @param array $params
+     * @param array $order
      * @return array
      */
-    public static function where($where, $params = []) {
+    public static function where($where, $params = [],$order=null) {
         $query = 'select * from `' . self::_getTable() . '` where ' . $where;
-        return self::query($query, $params);
+        return self::query($query, $params,$order);
     }
 
     /**
@@ -135,8 +136,8 @@ class Object {
      * @param array $params
      * @return object
      */
-    public static function whereFirst($where, $params) {
-        $array = self::where($where, $params);
+    public static function whereFirst($where, $params=[],$order=null) {
+        $array = self::where($where, $params,$order);
         return isset($array[0]) ? $array[0] : null;
     }
 
@@ -149,14 +150,14 @@ class Object {
      * @param type $params
      * @return type
      */
-    public static function find($params) {
+    public static function find($params, $order = null) {
         $where = [];
         $p = [];
         foreach ($params as $key => $value) {
             $where[] = '`' . $key . '`=?';
             $p[] = $value;
         }
-        return self::where(implode(' and ', $where), $p);
+        return self::where(implode(' and ', $where), $p, $order);
     }
 
     /**
@@ -168,8 +169,8 @@ class Object {
      * @param type $params
      * @return self
      */
-    public static function findOne($params) {
-        $array = self::find($params);
+    public static function findOne($params, $order = null) {
+        $array = self::find($params, $order);
         return isset($array[0]) ? $array[0] : null;
     }
 
@@ -177,10 +178,27 @@ class Object {
      * get all rows from class
      * @return array
      */
-    public static function getAll() {
-        $query = 'select * from `' . self::_getTable() . '`;';
-        return self::query($query, []);
+    public static function getAll($fields='null',$order=null) {
+        if(null==$fields){
+            $fieldsString='*';
+        }else{
+            $fieldsString='`'.implode('`,`',$fields).'`';
+        }
+        
+        $query = 'select '.$fields.' from `' . self::_getTable() . '`';
+        return self::query($query, [],self::order($order));
     }
+    
+    private static function order($order=null){
+        if(null!=$order or sizeof($order)==0){
+            $query=' order by `'.implode('`,`',$order).'`';
+        }else{
+            $query='';
+        }
+        return $query;
+    }
+            
+            
 
     public static function count($params = []) {
         $query = 'select count(*) from `' . self::_getTable() . '` ';
@@ -191,7 +209,7 @@ class Object {
                 $where[] = '`' . $key . '`=?';
                 $p[] = $value;
             }
-            $query.='where '.implode(' and ', $where);            
+            $query.='where ' . implode(' and ', $where);
         }
         $statement = Connection::prepare($query);
         try {
