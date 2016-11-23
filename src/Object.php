@@ -6,6 +6,8 @@
 
 namespace KORM;
 
+include('../vendor/autoload.php');
+
 use KORM\Connection;
 
 /**
@@ -24,6 +26,7 @@ class Object {
      * @var string
      */
     protected static $_primaryKeyColumn = 'id';
+    private static $_cache = [];
 
     /**
      * create an object
@@ -48,6 +51,7 @@ class Object {
                         $this->$key = $value;
                     }
                 }
+                self::$_cache[$class][$id]=$this;
             }
         }
     }
@@ -122,9 +126,9 @@ class Object {
      * @param array $order
      * @return array
      */
-    public static function where($where, $params = [],$order=null) {
-        $query = 'select * from `' . self::_getTable() . '` where ' . $where;
-        return self::query($query, $params,$order);
+    public static function where($where, $params = [], $order = null) {
+        $query = 'select * from `' . self::_getTable() . '` where ' . $where.self::order($order);
+        return self::query($query, $params);
     }
 
     /**
@@ -136,8 +140,8 @@ class Object {
      * @param array $params
      * @return object
      */
-    public static function whereFirst($where, $params=[],$order=null) {
-        $array = self::where($where, $params,$order);
+    public static function whereFirst($where, $params = [], $order = null) {
+        $array = self::where($where, $params, $order);
         return isset($array[0]) ? $array[0] : null;
     }
 
@@ -178,27 +182,20 @@ class Object {
      * get all rows from class
      * @return array
      */
-    public static function getAll($fields='null',$order=null) {
-        if(null==$fields){
-            $fieldsString='*';
-        }else{
-            $fieldsString='`'.implode('`,`',$fields).'`';
-        }
+    public static function getAll($order = null) {
+        $query = 'select * from `' . self::_getTable() . '`'.self::order($order);
         
-        $query = 'select '.$fields.' from `' . self::_getTable() . '`';
-        return self::query($query, [],self::order($order));
+        return self::query($query, []);
     }
-    
-    private static function order($order=null){
-        if(null!=$order or sizeof($order)==0){
-            $query=' order by `'.implode('`,`',$order).'`';
-        }else{
-            $query='';
+
+    private static function order($order = null) {
+        if (null != $order or sizeof($order) > 0) {
+            $query = ' order by `' . implode('`,`', $order) . '`';
+        } else {
+            $query = '';
         }
         return $query;
     }
-            
-            
 
     public static function count($params = []) {
         $query = 'select count(*) from `' . self::_getTable() . '` ';
@@ -238,7 +235,7 @@ class Object {
         }
 
         $result = $statement->fetchAll(\PDO::FETCH_CLASS, get_called_class());
-        return $result;
+        return new Collection($result);
     }
 
     /**
@@ -288,7 +285,7 @@ class Object {
             $array = [];
             foreach ($items as $item) {
                 $field = $class::_getTable() . '_id';
-                $array[] = $class::get($item->$field);
+                $array[] = new $class($item->$field);
             }
             return $array;
         } else {
@@ -447,7 +444,7 @@ class Object {
                     $item->delete();
                 }
                 foreach ($value as $v) {
-                    $item = $classBetween::newItem();
+                    $item = new $classBetween();
                     $field1 = $this->_getTable();
                     $item->$field1 = $this;
 
@@ -474,7 +471,8 @@ class Object {
         $columns = self::getColumns();
         foreach ($columns as $column) {
             if (isset($params[$column['Field']])) {
-                $this->$column['Field'] = $params[$column['Field']];
+                $c=$column['Field'];
+                $this->$c = $params[$column['Field']];
             }
         }
         return $this;
@@ -489,12 +487,24 @@ class Object {
         if ($name == self::$_primaryKeyColumn) {
             return null;
         }
+        $class = ucfirst($name);
         $field = $name . '_id';
         if (isset($this->$field)) {
-            $class = ucfirst($name);
+            $class = $this->getNamespace($this) . '\\' . ucfirst($name);
             return new $class($this->$field);
         }
         return $this->hasMany($this->_getNamespace() . '\\' . ucfirst($name));
+    }
+
+    protected function getNamespace($object = null) {
+        if ($object !== null) {
+            $tmp = (($object != "self") && (get_called_class() != get_class($object))) ? get_class($object) : get_called_class();
+            $tmparr = explode("\\", $tmp);
+            $class = array_pop($tmparr);
+            return join("\\", $tmparr);
+        } else {
+            return __NAMESPACE__;
+        }
     }
 
     /**
@@ -584,9 +594,7 @@ class Object {
                     //ALTER TABLE `board` ADD `label` VARCHAR(200) NOT NULL AFTER `id`; 
                     self::exec('ALTER TABLE `' . self::_getTable() . '` ADD `' . $name . '` ' . $type . ' ' . ' ' . $null . ' ' . $index, []);
                     if ($foreignKey) {
-                        self::exec('ALTER TABLE `' . self::_getTable() . '` ADD FOREIGN KEY (`' . $name . '`)
-REFERENCES `' . $referenceTable . '`(`' . $referenceClass::_primaryKeyColumn . '`) ON DELETE RESTRICT ON UPDATE RESTRICT;
-', []);
+                        self::exec('ALTER TABLE `' . self::_getTable() . '` ADD FOREIGN KEY (`' . $name . '`) REFERENCES `' . $referenceTable . '`(`' . $referenceClass::$_primaryKeyColumn . '`) ON DELETE RESTRICT ON UPDATE RESTRICT;', []);
                     }
                 } elseif (isset($c)) {
                     if ($type != $c['Type'] and $value !== 'NULL' and ! is_null($value)) {
@@ -609,5 +617,4 @@ REFERENCES `' . $referenceTable . '`(`' . $referenceClass::_primaryKeyColumn . '
     public function __toString() {
         return json_encode($this);
     }
-
 }
