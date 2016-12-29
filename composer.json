@@ -1,8 +1,8 @@
 {
     "name": "erwang/korm",
     "description": "ORM for PHP",
-    "license":"GNU-GPL3",
-    "keywords":["orm","mapping"],
+    "license": "GNU-GPL3",
+    "keywords": ["orm", "mapping"],
     "autoload": {
         "psr-4": {
             "KORM\\": "src/"
@@ -17,6 +17,6 @@
 
     "require-dev": {
         "phpdocumentor/phpdocumentor": "2.*",
-        "atoum/atoum":"dev-master"
+        "phpunit/phpunit": "^5.7"
     }    
 }

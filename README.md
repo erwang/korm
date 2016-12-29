@@ -88,13 +88,16 @@ $tag1->store();
 $tag2=new Tag();
 $tag2->text='Roman';
 $tag2->store();
-$lesMiserables->tag=\[$tag1,$tag2\];
+$lesMiserables->tag=[$tag1,$tag2];
+$lesMiserables->store();
 ```
-##Count
+## Count
+``` php
 //get the number of books
 Book::count();
 
 //get the number of books from an author
 Book::count(['author_id'=>$author->id]);
+```
 
 

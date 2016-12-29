@@ -6,8 +6,6 @@
 
 namespace KORM;
 
-include('../vendor/autoload.php');
-
 use KORM\Connection;
 
 /**
@@ -51,7 +49,7 @@ class Object {
                         $this->$key = $value;
                     }
                 }
-                self::$_cache[$class][$id]=$this;
+                self::$_cache[$class][$id] = $this;
             }
         }
     }
@@ -65,7 +63,8 @@ class Object {
         if (isset($class::$_table)) {
             return $class::$_table;
         } else {
-            return strtolower(str_replace('\\', '_', $class));
+            $array = explode('\\', $class);
+            return strtolower($array[count($array) - 1]);
         }
     }
 
@@ -127,7 +126,7 @@ class Object {
      * @return array
      */
     public static function where($where, $params = [], $order = null) {
-        $query = 'select * from `' . self::_getTable() . '` where ' . $where.self::order($order);
+        $query = 'select * from `' . self::_getTable() . '` where ' . $where . self::order($order);
         return self::query($query, $params);
     }
 
@@ -183,8 +182,8 @@ class Object {
      * @return array
      */
     public static function getAll($order = null) {
-        $query = 'select * from `' . self::_getTable() . '`'.self::order($order);
-        
+        $query = 'select * from `' . self::_getTable() . '`' . self::order($order);
+
         return self::query($query, []);
     }
 
@@ -206,7 +205,7 @@ class Object {
                 $where[] = '`' . $key . '`=?';
                 $p[] = $value;
             }
-            $query.='where ' . implode(' and ', $where);
+            $query .= 'where ' . implode(' and ', $where);
         }
         $statement = Connection::prepare($query);
         try {
@@ -234,8 +233,7 @@ class Object {
             exit($e->getMessage());
         }
 
-        $result = $statement->fetchAll(\PDO::FETCH_CLASS, get_called_class());
-        return new Collection($result);
+        return $statement->fetchAll(\PDO::FETCH_CLASS, get_called_class());
     }
 
     /**
@@ -318,14 +316,11 @@ class Object {
      */
     public static function drop($foreignKeyCheck = true) {
         if (!$foreignKeyCheck) {
-            Connection::exec('SET FOREIGN_KEY_CHECKS = 0;
-');
+            Connection::exec('SET FOREIGN_KEY_CHECKS = 0;');
         }
-        $return = Connection::exec('drop table `' . self::_getTable() . '`;
-');
+        $return = Connection::exec('drop table `' . self::_getTable() . '`;');
         if (!$foreignKeyCheck) {
-            Connection::exec('SET FOREIGN_KEY_CHECKS = 1;
-');
+            Connection::exec('SET FOREIGN_KEY_CHECKS = 1;');
         }
         return $return;
     }
@@ -337,14 +332,11 @@ class Object {
      */
     public static function truncate($foreignKeyCheck = true) {
         if (!$foreignKeyCheck) {
-            Connection::exec('SET FOREIGN_KEY_CHECKS = 0;
-');
+            Connection::exec('SET FOREIGN_KEY_CHECKS = 0;');
         }
-        $return = Connection::exec('truncate `' . self::_getTable() . '`;
-');
+        $return = Connection::exec('truncate `' . self::_getTable() . '`;');
         if (!$foreignKeyCheck) {
-            Connection::exec('SET FOREIGN_KEY_CHECKS = 1;
-');
+            Connection::exec('SET FOREIGN_KEY_CHECKS = 1;');
         }
         return $return;
     }
@@ -471,7 +463,7 @@ class Object {
         $columns = self::getColumns();
         foreach ($columns as $column) {
             if (isset($params[$column['Field']])) {
-                $c=$column['Field'];
+                $c = $column['Field'];
                 $this->$c = $params[$column['Field']];
             }
         }
@@ -570,7 +562,7 @@ class Object {
                 $null = '';
                 $foreignKey = false;
                 if (is_object($value)) {
-                    $name.='_id';
+                    $name .= '_id';
                     $referenceClass = get_class($value);
                     $value = $value->id;
                     $type = 'int(11)';
@@ -617,4 +609,5 @@ class Object {
     public function __toString() {
         return json_encode($this);
     }
+
 }
