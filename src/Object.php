@@ -79,12 +79,7 @@ class Object {
         }
         $query = 'show columns from `' . $table . '`';
         if (self::tableExists()) {
-            try {
-                return Connection::query($query)->fetchAll(\PDO::FETCH_ASSOC);
-            } catch (Exception $e) {
-                print($query);
-                exit($e->getMessage());
-            }
+            return Connection::query($query)->fetchAll(\PDO::FETCH_ASSOC);
         } else {
             return [];
         }
@@ -103,12 +98,7 @@ class Object {
         if (self::tableExists()) {
             $query = 'show columns from `' . $table . '` where Field=?';
             $statement = Connection::prepare($query);
-            try {
-                $statement->execute([$column]);
-            } catch (Exception $e) {
-                print($query);
-                exit($e->getMessage());
-            }
+            $statement->execute([$column]);
             return count($statement->fetchAll()) > 0;
         } else {
             return false;
@@ -208,12 +198,7 @@ class Object {
             $query .= 'where ' . implode(' and ', $where);
         }
         $statement = Connection::prepare($query);
-        try {
-            $statement->execute($p);
-        } catch (Exception $e) {
-            print($query);
-            exit($e->getMessage());
-        }
+        $statement->execute($p);
         $result = $statement->fetchAll(\PDO::FETCH_COLUMN);
         return $result[0];
     }
@@ -226,12 +211,7 @@ class Object {
      */
     public static function query($query, $params) {
         $statement = Connection::prepare($query);
-        try {
-            $statement->execute($params);
-        } catch (Exception $e) {
-            print($query);
-            exit($e->getMessage());
-        }
+        $statement->execute($params);
 
         return $statement->fetchAll(\PDO::FETCH_CLASS, get_called_class());
     }
@@ -271,8 +251,7 @@ class Object {
      */
     public function hasMany($class) {
         if (!class_exists($class)) {
-            var_dump($this);
-            exit('Class does not exists : ' . $class);
+            throw new Exception('Class does not exists : ' . $class);
         }
         if ($class::hasColumn(self::_getTable() . '_id')) {
             return $class::find([self::_getTable() . '_id' => $this->id]);
@@ -298,13 +277,8 @@ class Object {
      * @return integer
      */
     public static function exec($query, $params) {
-        try {
-            $statement = Connection::prepare($query);
-            $statement->execute($params);
-        } catch (Exception $e) {
-            var_dump($query);
-            exit($e->getMessage());
-        }
+        $statement = Connection::prepare($query);
+        $statement->execute($params);
 
         return $statement->rowCount();
     }
@@ -378,8 +352,9 @@ class Object {
 
     public function isInDatabase() {
         $id = self::$_primaryKeyColumn;
-        return isset($this->$id) and !is_null($this->$id);
+        return isset($this->$id) and ! is_null($this->$id);
     }
+
     /**
      * store an object in the database
      * @return \KORM\Object
@@ -429,11 +404,10 @@ class Object {
 
             $statement = Connection::prepare($query);
             $vars[self::$_primaryKeyColumn] = $this->$id;
-            $result=$statement->execute(array_values($vars));
-            if(!$result){
+            $result = $statement->execute(array_values($vars));
+            if (!$result) {
                 throw new Exception($statement->errorInfo());
             }
-
         }
         $vars = get_object_vars($this);
         foreach ($vars as $key => $value) {
