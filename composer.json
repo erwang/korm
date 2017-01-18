@@ -1,0 +1,22 @@
+{
+    "name": "erwang/korm",
+    "description": "ORM for PHP",
+    "license": "GNU-GPL3",
+    "keywords": ["orm", "mapping"],
+    "autoload": {
+        "psr-4": {
+            "KORM\\": "src/"
+        }
+    },    
+    "authors": [
+        {
+            "name": "erwang",
+            "email": "erwang@users.noreply.github.com"
+        }
+    ],
+
+    "require-dev": {
+        "phpdocumentor/phpdocumentor": "2.*",
+        "phpunit/phpunit": "^5.7"
+    }    
+}
