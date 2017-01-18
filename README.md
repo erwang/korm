@@ -1,4 +1,4 @@
-# orm_perso
+# KORM
 ORM in PHP
 
 
