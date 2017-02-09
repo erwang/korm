@@ -104,5 +104,13 @@ class Connection {
     public static function fetchAll($query,$class='stdClass'){
         return  self::get()->query($query,  \PDO::FETCH_CLASS,'stdClass')->fetchAll(\PDO::FETCH_CLASS,$class);        
     }
-    
+    public static function beginTransaction() {
+        return self::get()->_pdo->beginTransaction();
+    }
+    public static function commit() {
+        return self::get()->_pdo->commit();
+    }
+    public static function rollBack() {
+        return self::get()->_pdo->rollBack();        
+    }
 }

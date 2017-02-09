@@ -115,8 +115,8 @@ class Object {
      * @param array $order
      * @return array
      */
-    public static function where($where, $params = [], $order = null) {
-        $query = 'select * from `' . self::_getTable() . '` where ' . $where . self::order($order);
+    public static function where($where, $params = [], $order = null, $limit = null) {
+        $query = 'select * from `' . self::_getTable() . '` where ' . $where . self::order($order) . self::limit($limit);
         return self::query($query, $params);
     }
 
@@ -130,7 +130,7 @@ class Object {
      * @return object
      */
     public static function whereFirst($where, $params = [], $order = null) {
-        $array = self::where($where, $params, $order);
+        $array = self::where($where, $params, $order, '0,1');
         return isset($array[0]) ? $array[0] : null;
     }
 
@@ -143,14 +143,14 @@ class Object {
      * @param type $params
      * @return type
      */
-    public static function find($params, $order = null) {
+    public static function find($params, $order = null, $limit = null) {
         $where = [];
         $p = [];
         foreach ($params as $key => $value) {
             $where[] = '`' . $key . '`=?';
             $p[] = $value;
         }
-        return self::where(implode(' and ', $where), $p, $order);
+        return self::where(implode(' and ', $where), $p, $order, $limit);
     }
 
     /**
@@ -163,7 +163,7 @@ class Object {
      * @return self
      */
     public static function findOne($params, $order = null) {
-        $array = self::find($params, $order);
+        $array = self::find($params, $order, '0,1');
         return isset($array[0]) ? $array[0] : null;
     }
 
@@ -180,6 +180,15 @@ class Object {
     private static function order($order = null) {
         if (null != $order or sizeof($order) > 0) {
             $query = ' order by `' . implode('`,`', $order) . '`';
+        } else {
+            $query = '';
+        }
+        return $query;
+    }
+
+    public static function limit($limit) {
+        if (null != $limit) {
+            $query = ' limit ' . $limit;
         } else {
             $query = '';
         }
@@ -592,4 +601,15 @@ class Object {
         return json_encode($this);
     }
 
+    public function beginTransaction() {
+        return Connection::beginTransaction();
+    }
+
+    public function commit() {
+        return Connection::commit();
+    }
+
+    public function rollback() {
+        return Connection::rollBack();
+    }
 }
