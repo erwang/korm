@@ -260,7 +260,7 @@ class Object {
      */
     public function hasMany($class) {
         if (!class_exists($class)) {
-            throw new Exception('Class does not exists : ' . $class);
+            throw new \Exception('Class does not exists : ' . $class);
         }
         if ($class::hasColumn(self::_getTable() . '_id')) {
             return $class::find([self::_getTable() . '_id' => $this->id]);
@@ -415,7 +415,7 @@ class Object {
             $vars[self::$_primaryKeyColumn] = $this->$id;
             $result = $statement->execute(array_values($vars));
             if (!$result) {
-                throw new Exception($statement->errorInfo());
+                throw new \Exception($statement->errorInfo()[2]);
             }
         }
         $vars = get_object_vars($this);
