@@ -5,15 +5,19 @@ ORM in PHP
 ## Setup
 
 The Connection class setup must be call first.
+
 ``` php
 \KORM\Connection::setup('pdo_dsn', 'username', 'password');
 ```
 
 A connection to a mysql database :
+
 ``` php
 \KORM\Connection::setup('mysql:host=localhost;dbname=database', 'username', 'password');
 ```
+
 with options :
+
 ``` php
 \KORM\Connection::setup('mysql:host=localhost;dbname=database', 'username', 'password', array(\PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES \'UTF8\''));
 ```
@@ -21,16 +25,20 @@ with options :
 ##Create a class
 
 Each table in database requires a class with the same name :
+
 ``` php
 class Table extends \KORM\Object{
 }
 ```
+
 _name class is converted to lower case_
 For example, to store books :
+
 ``` php
 class Book extends \KORM\Object{
 }
 ```
+
 The `Book` objects will be store in `book` table
 
 ##Get a row from id
@@ -38,7 +46,8 @@ The `Book` objects will be store in `book` table
 ``` php
 $book = new Book($id);
 ```
-_will load in `$book` all the data in table `book` with id=1
+
+will load in `$book` all the data in table `book` with id=1
 
 ##Create a row
 
@@ -68,6 +77,7 @@ $book->delete();
 ``` php
 $book = Book::findOne(['title'=>'Les Misérables']);
 ```
+
 This return one Book (the first found)
 
 ###Find multiple Objects
@@ -75,6 +85,7 @@ This return one Book (the first found)
 ``` php
 $book = Author::find(['nationality'=>'French']);
 ```
+
 This will return an array with all french authors
 
 ##Relations
