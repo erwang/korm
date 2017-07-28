@@ -22,7 +22,7 @@ with options :
 \KORM\Connection::setup('mysql:host=localhost;dbname=database', 'username', 'password', array(\PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES \'UTF8\''));
 ```
 
-##Create a class
+## Create a class
 
 Each table in database requires a class with the same name :
 
