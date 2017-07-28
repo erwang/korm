@@ -15,7 +15,7 @@ use KORM\Object;
 class ObjectTest extends TestCase {
 
     public function setUp() {
-        \KORM\Connection::setup('mysql:host=localhost;dbname=perso_korm', 'root', '123456', array(\PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES \'UTF8\''));
+        \KORM\Connection::setup('mysql:host=localhost;dbname=perso_korm', 'phpmyadmin', '123456', array(\PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES \'UTF8\''));
         Author::truncate(false);
         Author::drop(false);
         Book::drop(false);
@@ -62,6 +62,8 @@ class ObjectTest extends TestCase {
     public function testAuthor() {
         $author = new Author(1);
         $this->assertEquals('Ernest', $author->firstname);
+        $this->assertEquals('Hemingway', $author->lastname);
+        
 
         $author->delete();
         $this->assertEquals(false, Author::keyExists(1));
@@ -87,8 +89,14 @@ class ObjectTest extends TestCase {
         $data['lastname'] = 'Hugo';
         $hugo = new Author();
         $hugo->populate($data);
-        $this->assertEquals('Victor', $hugo->firstname);
-        
+        $this->assertEquals('Victor', $hugo->firstname);        
     }
-
+    public function testIsEqualTp(){
+        $author1 = new Author(1);
+        $author2 = new Author(1);
+        $this->assertEquals(true, $author1->isEqualTo($author2));
+        
+        $author3 = new Author();
+        $this->assertEquals(false, $author1->isEqualTo($author3));
+    }
 }

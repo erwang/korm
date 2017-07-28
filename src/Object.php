@@ -25,32 +25,41 @@ class Object {
      */
     protected static $_primaryKeyColumn = 'id';
     private static $_cache = [];
+    protected $_className;
 
     /**
      * create an object
      * @param type $class
      */
     public function __construct($id = null) {
-        $class = get_called_class();
-        if ($class::tableExists()) {
-            if (is_null($id) and ( !isset($this->id) or is_null($this->id))) {
-                $vars = $class::getColumns($class::_getTable());
-                foreach ($vars as $value) {
-                    $key = $value['Field'];
-                    $this->$key = $value['Default'];
+        $class=$this->_className = get_called_class();
+        if (!$class::tableExists()) {
+            self::_createTable();
+        }
+        if (is_null($id) and ( !isset($this->id) or is_null($this->id))) {
+            $this->_constructNewRow($class);
+        } else {
+            $query = 'select * from `' . $class::_getTable() . '` where ' . self::$_primaryKeyColumn . '=?';
+            $pdo = Connection::prepare($query);
+            $pdo->execute([$id]);
+            $attrs = $pdo->fetchAll(\PDO::FETCH_ASSOC);
+            if (isset($attrs[0])) {
+                foreach ($attrs[0] as $key => $value) {
+                    $this->$key = $value;
                 }
-            } else {
-                $query = 'select * from `' . $class::_getTable() . '` where ' . self::$_primaryKeyColumn . '=?';
-                $pdo = Connection::prepare($query);
-                $pdo->execute([$id]);
-                $attrs = $pdo->fetchAll(\PDO::FETCH_ASSOC);
-                if (isset($attrs[0])) {
-                    foreach ($attrs[0] as $key => $value) {
-                        $this->$key = $value;
-                    }
-                }
-                self::$_cache[$class][$id] = $this;
             }
+        }
+    }
+
+    /**
+     * use to create a new Object with no id in database
+     * @param \KORM\String $class
+     */
+    private function _constructNewRow(String $class) {
+        $vars = $class::getColumns($class::_getTable());
+        foreach ($vars as $value) {
+            $key = $value['Field'];
+            $this->$key = $value['Default'];
         }
     }
 
@@ -233,6 +242,13 @@ class Object {
         $thisClass = get_class($this);
         return implode('\\', array_slice(explode('\\', $thisClass), 0, -1));
     }
+    /**
+     * determine $this class
+     * @return String
+     */
+    protected function _getClass() {
+        return isset($this->_className) ? $this->_className : get_class($this);
+    }
 
     /**
      * return class name 
@@ -241,7 +257,7 @@ class Object {
      * @return string
      */
     protected function _getClassBetween($class, $namespace = false) {
-        $thisClass = get_class($this);
+        $thisClass = $this->_getClass();
         $nsp = $this->_getNamespace();
         $array = [join('', array_slice(explode('\\', $class), -1)), join('', array_slice(explode('\\', $thisClass), -1))];
         sort($array);
@@ -264,7 +280,7 @@ class Object {
         }
         if ($class::hasColumn(self::_getTable() . '_id')) {
             return $class::find([self::_getTable() . '_id' => $this->id]);
-            //}elseif($class::hasColumn(self::_getTable() . '_id')){
+//}elseif($class::hasColumn(self::_getTable() . '_id')){
         } elseif (class_exists($this->_getClassBetween($class, true))) {
             $classBetween = $this->_getClassBetween($class, true);
             $items = $classBetween::find([self::_getTable() . '_id' => $this->id]);
@@ -364,6 +380,15 @@ class Object {
         return isset($this->$id) and ! is_null($this->$id);
     }
 
+    public function isEqualTo(Object $object){
+        $vars = get_object_vars($this);
+        foreach($vars as$key=>$value){
+            if(!isset($object->$key) or $this->$key!==$object->$key){
+                return false;
+            }
+        }
+        return true;
+    }
     /**
      * store an object in the database
      * @return \KORM\Object
@@ -380,9 +405,9 @@ class Object {
             if (!self::tableExists()) {
                 self::_createTable();
             }
-            //create fields
+//create fields
             $this->_createColumns();
-            //-----
+//-----
         }
         /**
          * convert attributes to database data
@@ -494,7 +519,7 @@ class Object {
      * Update table structure
      */
     private static function _createTable() {
-        self::exec('create table ' . self::_getTable() . '(' . self::$_primaryKeyColumn . ' INT NOT NULL AUTO_INCREMENT PRIMARY KEY)', []);
+        return self::exec('create table ' . self::_getTable() . '(' . self::$_primaryKeyColumn . ' INT NOT NULL AUTO_INCREMENT PRIMARY KEY)', []);
     }
 
     /**
@@ -504,7 +529,6 @@ class Object {
      */
     private static function _getColumnType($value) {
         $type = 'longtext';
-
         switch (gettype($value)) {
             case 'boolean':
                 $type = 'tinyint(1)';
@@ -612,4 +636,5 @@ class Object {
     public function rollback() {
         return Connection::rollBack();
     }
+
 }

@@ -1,6 +1,6 @@
 <?php
 
- namespace KORM\Tests;
+namespace KORM\Tests;
 
 use KORM\Object;
 

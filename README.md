@@ -32,7 +32,7 @@ class Book extends \KORM\Object{
 ```
 The `Book` objects will be store in `book` table
 
-##Get a row
+##Get a row from id
 ``` php
 $book = new Book($id);
 ```
@@ -55,6 +55,20 @@ $book->store();
 $book = new Book($id);
 $book->delete();
 ```
+
+##Find objects
+
+###Find one Object
+``` php
+$book = Book::findOne(['title'=>'Les Misérables']);
+```
+This return one Book (the first found)
+
+###Find multiple Objects
+``` php
+$book = Author::find(['nationality'=>'French']);
+```
+This will return an array with all french authors
 
 ##Relations
 
@@ -91,6 +105,7 @@ $tag2->store();
 $lesMiserables->tag=[$tag1,$tag2];
 $lesMiserables->store();
 ```
+
 ## Count
 ``` php
 //get the number of books
@@ -100,4 +115,13 @@ Book::count();
 Book::count(['author_id'=>$author->id]);
 ```
 
+##Populate an object
 
+``` php
+//get data from an array
+$post=['firstname'=>'Marcel','lastname'=>'Proust'];
+//create a new author
+$author=new Author();
+$author->populate($post);
+$author->store();
+```

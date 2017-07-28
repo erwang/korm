@@ -6,4 +6,5 @@ use KORM\Object;
 
 class Author extends Object{
     
+
 }
