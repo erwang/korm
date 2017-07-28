@@ -19,6 +19,7 @@ with options :
 ```
 
 ##Create a class
+
 Each table in database requires a class with the same name :
 ``` php
 class Table extends \KORM\Object{
@@ -33,17 +34,20 @@ class Book extends \KORM\Object{
 The `Book` objects will be store in `book` table
 
 ##Get a row from id
+
 ``` php
 $book = new Book($id);
 ```
 _will load in `$book` all the data in table `book` with id=1
 
 ##Create a row
+
 ``` php
 $book = new Book();
 ```
 
 ##Store an object
+
 ``` php
 $book = new Book($id);
 $book->title='Les Misérables';
@@ -51,6 +55,7 @@ $book->store();
 ```
 
 ##Delete an object
+
 ``` php
 $book = new Book($id);
 $book->delete();
@@ -59,12 +64,14 @@ $book->delete();
 ##Find objects
 
 ###Find one Object
+
 ``` php
 $book = Book::findOne(['title'=>'Les Misérables']);
 ```
 This return one Book (the first found)
 
 ###Find multiple Objects
+
 ``` php
 $book = Author::find(['nationality'=>'French']);
 ```
@@ -73,6 +80,7 @@ This will return an array with all french authors
 ##Relations
 
 ###One to many
+
 ``` php
 //create a book
 $lesMiserables = new Book();
@@ -92,7 +100,9 @@ $lesMiserables->store();
 $book = new Book($lesMiserables->id);
 $author = $book->author; //return the object Author from table author
 ```
+
 ### many to many
+
 ``` php
 //create tags
 $tag1=new Tag();
@@ -107,6 +117,7 @@ $lesMiserables->store();
 ```
 
 ## Count
+
 ``` php
 //get the number of books
 Book::count();
