@@ -15,12 +15,16 @@ use KORM\Object;
 class ObjectTest extends TestCase {
 
     public function setUp() {
-        \KORM\Connection::setup('mysql:host=localhost;dbname=perso_korm', 'phpmyadmin', '123456', array(\PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES \'UTF8\''));
-        Author::truncate(false);
+        $connection = \KORM\Connection::setup('test','mysql:host=localhost;dbname=perso_korm', 'phpmyadmin', '123456', array(\PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES \'UTF8\''));
+        Author::setConnection($connection);
         Author::drop(false);
+        Book::setConnection($connection);
         Book::drop(false);
+        Publisher::setConnection($connection);
         Publisher::drop(false);
+        Tag::setConnection($connection);
         Tag::drop(false);
+        Book_Tag::setConnection($connection);
         Book_Tag::drop(false);
 
         $author = new Author();
@@ -76,7 +80,12 @@ class ObjectTest extends TestCase {
 
     public function testManyToMany() {
         $tag = Tag::findOne(['label' => 'English']);
-        $this->assertCount(1, $tag->book);
+        $this->assertCount(1, $tag->book);        
+        $book= new Book(1);
+        $this->assertEquals(true, $tag->book[0]->isEqualTo($book));
+    }
+                
+    public function testCount(){  
         $this->assertEquals(1, Tag::count(['label' => 'English']));
     }
 

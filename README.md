@@ -7,19 +7,19 @@ ORM in PHP
 The Connection class setup must be call first.
 
 ``` php
-\KORM\Connection::setup('pdo_dsn', 'username', 'password');
+$connection = \KORM\Connection::setup('name',0pdo_dsn', 'username', 'password');
 ```
 
 A connection to a mysql database :
 
 ``` php
-\KORM\Connection::setup('mysql:host=localhost;dbname=database', 'username', 'password');
+$connection = \KORM\Connection::setup('connectionName','mysql:host=localhost;dbname=database', 'username', 'password');
 ```
 
 with options :
 
 ``` php
-\KORM\Connection::setup('mysql:host=localhost;dbname=database', 'username', 'password', array(\PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES \'UTF8\''));
+$connection = \KORM\Connection::setup('connectionName','mysql:host=localhost;dbname=database', 'username', 'password', array(\PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES \'UTF8\''));
 ```
 
 ## Create a class
@@ -40,6 +40,11 @@ class Book extends \KORM\Object{
 ```
 
 The `Book` objects will be store in `book` table
+
+## Define connection
+``` php
+Book::setConnection($connection);
+``` 
 
 ## Get a row from id
 
@@ -83,10 +88,30 @@ This return one Book (the first found)
 ### Find multiple Objects
 
 ``` php
-$book = Author::find(['nationality'=>'French']);
+$authors = Author::find(['nationality'=>'French']);
 ```
 
 This will return an array with all french authors
+
+If you need complex where clause, you can use where
+
+``` php
+$books = Book::where('pages>:nbpages',['nbpages'=>100]);
+```
+This will return an array with books with more than 100 pages
+
+If you want more complex queries :
+
+``` php
+$books = Book::query('select book.* from book,author where author.id=:author_id and pages>:nbpages and author.id=book.author_id',['nbpages'=>100,'author_id'=>1]);
+```
+This will return an array with books with more than 100 pages from author with id 1
+
+``` php
+$books = Book::getAll();
+```
+This will return all books in table
+
 
 ## Relations
 
@@ -125,6 +150,9 @@ $tag2->text='Roman';
 $tag2->store();
 $lesMiserables->tag=[$tag1,$tag2];
 $lesMiserables->store();
+
+//find book from many
+$booksWithFrenchTag = $tag1->book;
 ```
 
 ## Count
@@ -147,3 +175,22 @@ $author=new Author();
 $author->populate($post);
 $author->store();
 ```
+
+## Truncate table
+
+``` php
+//with foreign key check
+Author::truncate();
+//without foreign key check
+Author::truncate(false);
+```
+
+## Drop table
+
+``` php
+//with foreign key check
+Author::drop();
+//without foreign key check
+Author::drop(false);
+```
+

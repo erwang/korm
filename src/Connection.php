@@ -18,7 +18,7 @@ class Connection {
      * store the instance for singleton pattern
      * @var Connexion
      */
-    private static $_instance;
+    private static $_instances=[];
     
     /**
      * Constructor
@@ -39,33 +39,36 @@ class Connection {
     
     /**
      * Create an instance with setup
+     * @param string $name
      * @param string $dsn
      * @param string $username
      * @param string $password
      * @param string $options
      */
-    public static function setup($dsn,$username=null,$password=null,$options=null){
-        self::$_instance = new self($dsn,$username,$password,$options);
+    public static function setup($name,$dsn,$username=null,$password=null,$options=null){
+        return self::$_instances[$name] = new self($dsn,$username,$password,$options);
+
     }
     
     /**
      * get the Connexion instance
+     * @param string $name
      * @return KORM\Connexion
      * @throws \Exception
      */
-    public static function get(){
-        if(is_null(self::$_instance)){
-            throw new \Exception('You must call Connexion::setup before');
+    public static function get($name){
+        if(is_null(self::$_instances)){
+            throw new \Exception('You must call Connexion::setup() before');
         }
-        return self::$_instance;
+        return self::$_instances;
     }
     /**
      * Prepare a SQL query
      * @param string $query
      * @return PDOStatement
      */
-    public static function prepare($query){
-        return self::get()->_pdo->prepare($query);
+    public function prepare($query){
+        return $this->_pdo->prepare($query);
     }
     
     /**
@@ -73,17 +76,17 @@ class Connection {
      * @param string $query
      * @return PDOStatement
      */
-    public static function query($query){
-        return self::get()->_pdo->query($query);          
+    public function query($query){
+        return $this->_pdo->query($query);
     }
     /**
      * execute an exec query
      * @param type $query
      * @return type
      */
-    public static function exec($query){
+    public function exec($query){
         try {
-            return self::get()->_pdo->exec($query);            
+            return $this->_pdo->exec($query);
         } catch (Exception $exc) {
             exit($exc->getTraceAsString());
         }
@@ -92,8 +95,8 @@ class Connection {
      * return the last inserted id
      * @return int
      */
-    public static function lastInsertId(){
-        return self::get()->_pdo->lastInsertId();        
+    public function lastInsertId(){
+        return $this->_pdo->lastInsertId();
     }
     /**
      * get all rows froma query 
@@ -101,16 +104,16 @@ class Connection {
      * @param type $class
      * @return type
      */
-    public static function fetchAll($query,$class='stdClass'){
-        return  self::get()->query($query,  \PDO::FETCH_CLASS,'stdClass')->fetchAll(\PDO::FETCH_CLASS,$class);        
+    public function fetchAll($query,$class='stdClass'){
+        return  $this->query($query,  \PDO::FETCH_CLASS,'stdClass')->fetchAll(\PDO::FETCH_CLASS,$class);
     }
-    public static function beginTransaction() {
-        return self::get()->_pdo->beginTransaction();
+    public function beginTransaction() {
+        return $this->_pdo->beginTransaction();
     }
-    public static function commit() {
-        return self::get()->_pdo->commit();
+    public function commit() {
+        return $this->_pdo->commit();
     }
-    public static function rollBack() {
-        return self::get()->_pdo->rollBack();        
+    public function rollBack() {
+        return $this->_pdo->rollBack();
     }
 }
