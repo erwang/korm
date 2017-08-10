@@ -7,7 +7,7 @@ ORM in PHP
 The Connection class setup must be call first.
 
 ``` php
-$connection = \KORM\Connection::setup('name',0pdo_dsn', 'username', 'password');
+$connection = \KORM\Connection::setup('name','pdo_dsn', 'username', 'password');
 ```
 
 A connection to a mysql database :
