@@ -1,6 +1,6 @@
 # KORM
 ORM in PHP
-
+⛔️ DEPRECATED 
 
 ## Setup
 
